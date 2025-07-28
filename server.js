@@ -5,7 +5,6 @@ const app = express();
 
 app.use(cors());
 
-// ✅ ここを修正
 app.get("/", (req, res) => {
   res.send("Korサーバーは正常に動作しています");
 });
@@ -14,7 +13,7 @@ app.get("/proxy", async (req, res) => {
   const targetUrl = decodeURIComponent(req.query.url || "");
 
   if (!/^https?:\/\//.test(targetUrl)) {
-    return res.status(400).send("無効なURLです");
+    return res.status(400).send("URLを認識できません");
   }
 
   try {
