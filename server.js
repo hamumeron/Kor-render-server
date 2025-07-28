@@ -5,6 +5,11 @@ const app = express();
 
 app.use(cors());
 
+// ✅ ここを修正
+app.get("/", (req, res) => {
+  res.send("Korサーバーは正常に動作しています");
+});
+
 app.get("/proxy", async (req, res) => {
   const targetUrl = decodeURIComponent(req.query.url || "");
 
@@ -30,8 +35,3 @@ app.get("/proxy", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Proxy server running on port ${PORT}`));
-
-app.get("/", (req, res) => {
-  res.send("I'm alive!");
-});
-
