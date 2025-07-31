@@ -49,7 +49,7 @@ async function handleProxy(req, res, rawUrl) {
 
           if (absoluteUrl.host === myProxyHost) return;
 
-          if (absoluteUrl.hostname === "www.bing.com" && absoluteUrl.pathname.startsWith("/proxy")) return;
+          if (absoluteUrl.hostname.endsWith("bing.com") && absoluteUrl.pathname.startsWith("/proxy")) return;
 
           if (absoluteUrl.hostname === "www.google.com" && absoluteUrl.pathname === "/url") return;
 
