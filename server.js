@@ -1,7 +1,9 @@
 const express = require("express");
 const cors = require("cors");
-const { default: fetch } = require("node-fetch");
+const fetch = require("node-fetch");
+
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 
@@ -10,27 +12,28 @@ app.get("/", (req, res) => {
 });
 
 app.get("/proxy", async (req, res) => {
-  const targetUrl = decodeURIComponent(req.query.url || "");
+  const targetUrl = req.query.url;
 
-  if (!/^https?:\/\//.test(targetUrl)) {
-    return res.status(400).send("URLを認識できません");
+  if (!targetUrl || !/^https?:\/\//.test(targetUrl)) {
+    return res.status(400).send("Invalid or missing URL parameter.");
   }
 
   try {
     const response = await fetch(targetUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; AnonymousProxy/1.0)",
-      }
+        "User-Agent": "Mozilla/5.0 (compatible; KorProxy/1.0; +https://example.com/)",
+      },
     });
 
-    const contentType = response.headers.get("content-type");
-    res.set("content-type", contentType);
-    const body = await response.buffer();
-    res.send(body);
+    res.set("Content-Type", response.headers.get("content-type") || "text/plain");
+    const buffer = await response.buffer();
+    res.send(buffer);
   } catch (err) {
-    res.status(500).send("エラー: " + err.message);
+    console.error("Proxy error:", err);
+    res.status(500).send("Proxy Error: " + err.message);
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Proxy server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Kor Proxy Server is running on port ${PORT}`);
+});
