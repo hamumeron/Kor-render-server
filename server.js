@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { default: fetch } = require("node-fetch");
-const cheerio = require("cheerio");  // 追加
+const cheerio = require("cheerio");
 
 const app = express();
 app.use(cors());
@@ -38,12 +38,19 @@ async function handleProxy(req, res, rawUrl) {
         $("head").prepend(`<base href="${targetUrl}">`);
       }
 
+      const myProxyHost = req.headers.host;
+
       $("a[href]").each((_, el) => {
         const href = $(el).attr("href");
         if (!href) return;
 
         try {
           const absoluteUrl = new URL(href, targetUrl).toString();
+
+          if (absoluteUrl.includes(myProxyHost)) return;
+
+          if (absoluteUrl.startsWith("https://www.bing.com/proxy")) return;
+
           const proxiedUrl = `/proxy?url=${encodeURIComponent(absoluteUrl)}`;
           $(el).attr("href", proxiedUrl);
         } catch {
@@ -56,6 +63,10 @@ async function handleProxy(req, res, rawUrl) {
 
         try {
           const absoluteUrl = new URL(action, targetUrl).toString();
+
+          if (absoluteUrl.includes(myProxyHost)) return;
+          if (absoluteUrl.startsWith("https://www.bing.com/proxy")) return;
+
           const proxiedUrl = `/proxy?url=${encodeURIComponent(absoluteUrl)}`;
           $(el).attr("action", proxiedUrl);
         } catch {}
