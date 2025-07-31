@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { default: fetch } = require("node-fetch");
+const cheerio = require("cheerio");  // 追加
 
 const app = express();
 app.use(cors());
@@ -9,8 +10,8 @@ app.get("/", (req, res) => {
   res.send("Korサーバーは正常に動作しています");
 });
 
-app.get("/proxy", async (req, res) => {
-  const targetUrl = decodeURIComponent(req.query.url || "");
+async function handleProxy(req, res, rawUrl) {
+  const targetUrl = decodeURIComponent(rawUrl || "");
 
   if (!/^https?:\/\//.test(targetUrl)) {
     return res.status(400).send("URLを認識できません");
@@ -31,14 +32,41 @@ app.get("/proxy", async (req, res) => {
     if (contentType.includes("text/html")) {
       let html = await response.text();
 
-      html = html.replace(/<head[^>]*>/i, (match) => {
-        return `${match}\n<base href="${targetUrl}">`;
+      const $ = cheerio.load(html);
+
+      if ($("head base").length === 0) {
+        $("head").prepend(`<base href="${targetUrl}">`);
+      }
+
+      $("a[href]").each((_, el) => {
+        const href = $(el).attr("href");
+        if (!href) return;
+
+        try {
+          const absoluteUrl = new URL(href, targetUrl).toString();
+          const proxiedUrl = `/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+          $(el).attr("href", proxiedUrl);
+        } catch {
+        }
       });
 
-      html = html.replace(/X-Frame-Options.*?\n?/gi, "");
-      html = html.replace(/Content-Security-Policy.*?\n?/gi, "");
+      $("form[action]").each((_, el) => {
+        const action = $(el).attr("action");
+        if (!action) return;
 
-      res.send(html);
+        try {
+          const absoluteUrl = new URL(action, targetUrl).toString();
+          const proxiedUrl = `/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+          $(el).attr("action", proxiedUrl);
+        } catch {}
+      });
+
+      let newHtml = $.html();
+
+      newHtml = newHtml.replace(/X-Frame-Options.*?\n?/gi, "");
+      newHtml = newHtml.replace(/Content-Security-Policy.*?\n?/gi, "");
+
+      res.send(newHtml);
     } else {
       const buffer = await response.buffer();
       res.send(buffer);
@@ -47,6 +75,18 @@ app.get("/proxy", async (req, res) => {
     console.error("Fetch error:", err.message);
     res.status(500).send("エラー: " + err.message);
   }
+}
+
+app.get("/proxy", (req, res) => {
+  handleProxy(req, res, req.query.url);
+});
+
+app.get("/url", (req, res) => {
+  handleProxy(req, res, req.query.q);
+});
+
+app.use((req, res) => {
+  res.status(404).send("エラー: サポートされていないURLです");
 });
 
 const PORT = process.env.PORT || 3000;
