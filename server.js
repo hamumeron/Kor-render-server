@@ -45,13 +45,16 @@ async function handleProxy(req, res, rawUrl) {
         if (!href) return;
 
         try {
-          const absoluteUrl = new URL(href, targetUrl).toString();
+          const absoluteUrl = new URL(href, targetUrl);
 
-          if (absoluteUrl.includes(myProxyHost)) return;
+          if (absoluteUrl.host === myProxyHost) return;
 
-          if (absoluteUrl.startsWith("https://www.bing.com/proxy")) return;
+          if (absoluteUrl.hostname === "www.bing.com" && absoluteUrl.pathname.startsWith("/proxy")) return;
 
-          const proxiedUrl = `/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+          if (absoluteUrl.hostname === "www.google.com" && absoluteUrl.pathname === "/url") return;
+
+
+          const proxiedUrl = `/proxy?url=${encodeURIComponent(absoluteUrl.toString())}`;
           $(el).attr("href", proxiedUrl);
         } catch {
         }
@@ -62,12 +65,13 @@ async function handleProxy(req, res, rawUrl) {
         if (!action) return;
 
         try {
-          const absoluteUrl = new URL(action, targetUrl).toString();
+          const absoluteUrl = new URL(action, targetUrl);
 
-          if (absoluteUrl.includes(myProxyHost)) return;
-          if (absoluteUrl.startsWith("https://www.bing.com/proxy")) return;
+          if (absoluteUrl.host === myProxyHost) return;
+          if (absoluteUrl.hostname === "www.bing.com" && absoluteUrl.pathname.startsWith("/proxy")) return;
+          if (absoluteUrl.hostname === "www.google.com" && absoluteUrl.pathname === "/url") return;
 
-          const proxiedUrl = `/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+          const proxiedUrl = `/proxy?url=${encodeURIComponent(absoluteUrl.toString())}`;
           $(el).attr("action", proxiedUrl);
         } catch {}
       });
