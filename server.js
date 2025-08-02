@@ -4,15 +4,12 @@ const fetch = require("node-fetch");
 
 const app = express();
 
-// 信頼プロキシ設定（Render側の X-Forwarded-* ヘッダーを利用するため）
 app.set("trust proxy", true);
 
-// CORS を広く許可（これによりフロントの iframe などからも読み込み可能）
 app.use(cors({ origin: "*", methods: ["GET", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
 
 app.options("*", cors());
 
-// テスト用エンドポイント
 app.get("/", (req, res) => {
   res.send("Korサーバーは正常に動作しています");
 });
@@ -30,7 +27,6 @@ async function handleProxy(rawUrl, res) {
         "Accept-Language": "ja,en-US;q=0.9",
         "Referer": "https://www.google.com/"
       },
-      // SSLエラー対策やリダイレクト処理が必要な場合も考慮可能
     });
 
     const contentType = response.headers.get("content-type") || "text/plain";
@@ -52,18 +48,16 @@ async function handleProxy(rawUrl, res) {
   }
 }
 
-// /proxy?url=
 app.get("/proxy", (req, res) => {
   handleProxy(req.query.url, res);
 });
 
-// /url?q=
 app.get("/url", (req, res) => {
   handleProxy(req.query.q, res);
 });
 
 app.use((req, res) => {
-  res.status(404).send("サポートされていない URL 形式です");
+  res.status(404).send("URLサポートされてないよ/なんかあったら言ってください");
 });
 
 const PORT = process.env.PORT || 3000;
